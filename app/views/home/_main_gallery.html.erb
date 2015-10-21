@@ -1,129 +1,158 @@
-<%= javascript_include_tag 'three.js' %>
-<script>
-var scene, camera, renderer;
+    <%= javascript_include_tag 'three.js' %>
+    <script>
+    var scene, camera, renderer;
 var geometry, material, mesh;
-var pyramid, dir_light,visited = [];
+var pyramid, dir_light,pyramids = [];
+var eventHandling, initScene, intersect_plane;
 
-init();
-
-
-function init() {
+initScene = function() {
 
     scene = new THREE.Scene();
-
-    camera = new THREE.PerspectiveCamera( 75, window.innerWidth / window.innerHeight, 1, 10000 );
-    camera.position.set(0,100,0);
-    camera.lookAt(scene.position);
-
-    var light = new THREE.PointLight( 0xFFFFFF, 0.5, 100 );
-    light.position.set(0,0,0 );
-    scene.add( light );
-    
-
-    dir_light = new THREE.DirectionalLight( 0xffd700 );
-    dir_light.position.set( 20, 30, -5 );
-    dir_light.target.position.copy( scene.position );
-    dir_light.castShadow = true;
-    dir_light.shadowCameraLeft = -100;
-    dir_light.shadowCameraTop = -100;
-    dir_light.shadowCameraRight = 100;
-    dir_light.shadowCameraBottom = 100;
-    dir_light.shadowCameraNear = 0;
-    dir_light.shadowCameraFar = 100;
-    dir_light.shadowBias = -.001
-    dir_light.shadowMapWidth = dir_light.shadowMapHeight = 2048;
-    dir_light.shadowDarkness = .3;
-    scene.add(dir_light);
-    
-
-
-
-
-    
     renderer = new THREE.WebGLRenderer();
     renderer.setSize( window.innerWidth, window.innerHeight );
     renderer.shadowMapEnabled = true;
     renderer.shadowMapSoft = true;
     renderer.shadowMapType = THREE.PCFShadowMap;
     renderer.shadowMapAutoUpdate = true;
-    renderer.setClearColor( 0x00FFFF );
+    renderer.setClearColor( 0x777777 );
 
     document.getElementById('canvas').appendChild( renderer.domElement );
 
-    renderer.render( scene, camera );
+    camera = new THREE.PerspectiveCamera( 75, window.innerWidth / window.innerHeight, 1, 500 );
+    camera.position.set(0,75,0);
+    camera.lookAt(scene.position);
+
+    var light = new THREE.AmbientLight( 0xeeeeee ); // soft white light
+    scene.add( light );
+
+    dir_light = new THREE.DirectionalLight( 0xAAAAAA );
+    dir_light.position.set( 20, 5, 30 );
+    dir_light.target.position.copy( scene.position );
+    dir_light.castShadow = true;
+    dir_light.shadowCameraLeft = -200;
+    dir_light.shadowCameraTop = -200;
+    dir_light.shadowCameraRight = 200;
+    dir_light.shadowCameraBottom = 200;
+    dir_light.shadowCameraNear = 0;
+    dir_light.shadowCameraFar = 500;
+    dir_light.shadowBias = -.001
+    dir_light.shadowMapWidth = dir_light.shadowMapHeight = 5000;
+    dir_light.shadowDarkness = .5;
+
+    scene.add(dir_light);
+
+    intersect_plane = new THREE.Mesh(
+	new THREE.PlaneBufferGeometry( 400, 400 ),
+	new THREE.MeshBasicMaterial({ opacity: 0 , transparent: true })
+    );
+    intersect_plane.rotation.x = Math.PI / -2;
+    intersect_plane.position.set(0,10,0);
+    scene.add( intersect_plane );
+
+    drawPyramid();
     
+    eventHandling();
+    requestAnimationFrame( animate );
+
+}
+
+function drawPyramid() {
 
     pyramid = new THREE.Mesh(
-    	new THREE.CylinderGeometry(0,10,7,4,1),
-    	new THREE.MeshBasicMaterial({color: 0x00FF77})
-
+    	new THREE.CylinderGeometry(0,10,3,4,1),
+    	new THREE.MeshLambertMaterial({color: 0x777777, opacity: 1, transparent: true})
     );
 
-    pyramid.receiveShadow = true;
-    pyramid.castShadow = true;
-
+    
     pyramid.rotation.y=Math.PI/4;
     pyramid.geometry.computeVertexNormals();
-    scene.add(pyramid);
+    pyramid.position.set(-100,0,140);
 
-    visited.push(pyramid.position.x.toString() + ',' + pyramid.position.z.toString());
-
-    recursiveDraw(pyramid,50,visited);
+    buildField(pyramid,20);
 
 }
 
-
-function recursiveDraw(obj,n) {
+function buildField(obj,n) {
     
-    if (n == 0) {
-	return;
+    var pyramid,pyramid1 = obj, pyramid2,pyramid3;
+    for (var i = 0; i < n; i++) {
+	pyramid = pyramid1.clone();
+	pyramid.geometry.computeBoundingBox();
+	pyramid.position.x += pyramid.geometry.boundingBox.max.x*1.4;
+	pyramid.receiveShadow = true;
+	pyramid.castShadow = true;
+	pyramids.push(pyramid);
+	pyramid3 = pyramid;
+	for (var j = 0; j < n; j++) {
+	    pyramid2 = pyramid3.clone();
+	    pyramid2.geometry.computeBoundingBox();
+	    pyramid2.position.z -= pyramid2.geometry.boundingBox.max.z*1.4;
+	    pyramid2.receiveShadow = true;
+	    pyramid2.castShadow = true;
+	    pyramids.push(pyramid2);
+	    pyramid3 = pyramid2;
+	}
+	pyramid1 = pyramid;
     }
+
     
-    var pyramid1 = obj.clone();
-    pyramid1.geometry.computeBoundingBox();
-    pyramid1.position.x += pyramid1.geometry.boundingBox.max.x*1.4;
-    if (visited.indexOf(pyramid1.position.x.toString() + ',' + pyramid1.position.z.toString()) < 1) {
-	scene.add(pyramid1);
-	visited.push(pyramid1.position.x.toString() + ',' + pyramid1.position.z.toString());
-	recursiveDraw(pyramid1,n-1);
-    }
+};
 
-    var pyramid2 = obj.clone();
-    pyramid2.geometry.computeBoundingBox();
-    pyramid2.position.z += pyramid2.geometry.boundingBox.max.x*1.4;
-    if (visited.indexOf(pyramid2.position.x.toString() + ',' + pyramid2.position.z.toString()) < 1) {
-	scene.add(pyramid2);
-	visited.push(pyramid2.position.x.toString() + ',' + pyramid2.position.z.toString());
-	recursiveDraw(pyramid2,n-1);
-    }
-
-    var pyramid3 = obj.clone();
-    pyramid3.geometry.computeBoundingBox();
-    pyramid3.position.x -= pyramid3.geometry.boundingBox.max.x*1.4;
-    if (visited.indexOf(pyramid3.position.x.toString() + ',' + pyramid3.position.z.toString()) < 1) {
-	scene.add(pyramid3);
-	visited.push(pyramid3.position.x.toString() + ',' + pyramid3.position.z.toString());
-	recursiveDraw(pyramid3,n-1);
-    }
-
-    var pyramid4 = obj.clone();
-    pyramid4.geometry.computeBoundingBox();
-    pyramid4.position.z -= pyramid4.geometry.boundingBox.max.x*1.4;
-    if (visited.indexOf(pyramid4.position.x.toString() + ',' + pyramid4.position.z.toString()) < 1) {
-	scene.add(pyramid4);
-	visited.push(pyramid4.position.x.toString() + ',' + pyramid4.position.z.toString());
-	recursiveDraw(pyramid4,n-1);
-    }
-
-
-    renderer.render(scene, camera);
+function popAndShow() {
+    var random_num = Math.floor((Math.random() * pyramids.length));
+    scene.add(pyramids.splice(random_num,1)[0]);
+    
 }
-
 
 function animate() {
-
-    renderer.render(scene, camera);
     requestAnimationFrame(animate);
+
+    if (pyramids.length > 0) popAndShow();
+    if (pyramids.length > 0) popAndShow();
+    //create buffer that for new pyramids that need their opacity increased and moved into place
+    //pyramids should be put in the buffer in the pop and show
+    //then another function 'revealslow' increments all of their opacity's by 0.1 and moving them
+    //into place, then finally dequeueing the last one
+
+    
+    renderer.render(scene,camera);
+
 }
+
+
+eventHandling = function() {
+    var handleMouseMove, raycaster = new THREE.Raycaster(), intersection;
+
+    window.addEventListener('resize',function() {
+	// needs to be fixed for a stretch in the x-axis
+	camera.aspect = window.innerWidth / window.innerHeight;
+	camera.updateProjectionMatrix();
+	renderer.setSize( window.innerWidth, window.innerHeight );
+    });
+
+    handleMouseMove = function( evt ) {
+
+	var mouse = new THREE.Vector3((evt.clientX / window.innerWidth) * 2 - 1,
+				      -(evt.clientY / window.innerHeight ) * 2 + 1,
+				      1);
+    
+	raycaster.setFromCamera(mouse,camera);
+	intersection = raycaster.intersectObject( intersect_plane );
+
+	dir_light.position.set(intersection[0].point.x,intersection[0].point.y,intersection[0].point.z);
+	
+	
+    }
+
+    return function() {
+	document.getElementById('front').addEventListener('mousemove',handleMouseMove );
+	document.getElementById('nav-bar').addEventListener('mousemove',handleMouseMove );
+	//add scroll function that changes light position
+    }
+}();
+
+
+
+window.onload = initScene;
 
 </script>
