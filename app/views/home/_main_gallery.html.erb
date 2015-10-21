@@ -1,0 +1,125 @@
+    <%= javascript_include_tag 'three.js' %>
+    <script>
+    var scene, camera, renderer;
+var geometry, material, mesh;
+var pyramid, dir_light,visited = [];
+
+init();
+animate();
+
+function init() {
+
+    scene = new THREE.Scene();
+
+    camera = new THREE.PerspectiveCamera( 75, window.innerWidth / window.innerHeight, 1, 10000 );
+    camera.position.set(0,100,0);
+    camera.lookAt(scene.position);
+
+    var light = new THREE.PointLight( 0xFFFFFF, 0.5, 100 );
+    light.position.set(0,0,0 );
+    scene.add( light );
+    
+
+    dir_light = new THREE.DirectionalLight( 0xffd700 );
+    dir_light.position.set( 20, 30, -5 );
+    dir_light.target.position.copy( scene.position );
+    dir_light.castShadow = true;
+    dir_light.shadowCameraLeft = -100;
+    dir_light.shadowCameraTop = -100;
+    dir_light.shadowCameraRight = 100;
+    dir_light.shadowCameraBottom = 100;
+    dir_light.shadowCameraNear = 0;
+    dir_light.shadowCameraFar = 100;
+    dir_light.shadowBias = -.001
+    dir_light.shadowMapWidth = dir_light.shadowMapHeight = 2048;
+    dir_light.shadowDarkness = .3;
+    scene.add(dir_light);
+    
+
+
+
+
+    
+    renderer = new THREE.WebGLRenderer();
+    renderer.setSize( window.innerWidth, window.innerHeight );
+    renderer.shadowMapEnabled = true;
+    renderer.shadowMapSoft = true;
+    renderer.shadowMapType = THREE.PCFShadowMap;
+    renderer.shadowMapAutoUpdate = true;
+    renderer.setClearColor( 0x00FFFF );
+
+    document.getElementById('canvas').appendChild( renderer.domElement );
+
+    renderer.render( scene, camera );
+    
+
+    pyramid = new THREE.Mesh(
+    	new THREE.CylinderGeometry(0,10,7,4,1),
+    	new THREE.MeshBasicMaterial({color: 0x00FF77})
+
+    );
+
+    pyramid.receiveShadow = true;
+    pyramid.castShadow = true;
+
+    pyramid.rotation.y=Math.PI/4;
+    pyramid.geometry.computeVertexNormals();
+    scene.add(pyramid);
+
+    recursiveDraw(pyramid,5,visited);
+
+}
+
+
+function recursiveDraw(obj,n) {
+    
+    if (n == 0) {
+	return;
+    }
+    
+    visited.push([obj.position.x,obj.position.z]);
+    
+    var newPyramid = obj.clone();
+    newPyramid.geometry.computeBoundingBox();
+    newPyramid.position.x += newPyramid.geometry.boundingBox.max.x*1.4;
+    if (visited.indexOf([newPyramid.position.x,newPyramid.position.z]) < 1) {
+	scene.add(newPyramid);
+	recursiveDraw(newPyramid,n-1);
+    }
+
+    var newPyramid = obj.clone();
+    newPyramid.geometry.computeBoundingBox();
+    newPyramid.position.z += newPyramid.geometry.boundingBox.max.z*1.4;
+    if (visited.indexOf([newPyramid.position.x,newPyramid.position.z]) < 1) {
+	scene.add(newPyramid);
+	recursiveDraw(newPyramid,n-1);
+    }
+    
+    var newPyramid = obj.clone();
+    newPyramid.geometry.computeBoundingBox();
+    newPyramid.position.x -= newPyramid.geometry.boundingBox.max.x*1.4;
+    if (visited.indexOf([newPyramid.position.x,newPyramid.position.z]) < 1) {
+	scene.add(newPyramid);
+	recursiveDraw(newPyramid,n-1);
+	
+    }
+
+    var newPyramid = obj.clone();
+    newPyramid.geometry.computeBoundingBox();
+    newPyramid.position.z -= newPyramid.geometry.boundingBox.max.z*1.4;
+    if (visited.indexOf([newPyramid.position.x,newPyramid.position.z]) < 1) {
+	scene.add(newPyramid);
+	recursiveDraw(newPyramid,n-1);
+    }
+
+    
+}
+
+
+function animate() {
+
+    renderer.render(scene, camera);
+    requestAnimationFrame(animate);
+}
+
+</script>
