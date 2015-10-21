@@ -2,8 +2,9 @@
     <script>
     var scene, camera, renderer;
 var geometry, material, mesh;
-var pyramid, dir_light,pyramids = [];
+var pyramid, dir_light,pyramids = [],pyramid_buffer = [];
 var eventHandling, initScene, intersect_plane;
+
 
 initScene = function() {
 
@@ -60,7 +61,7 @@ function drawPyramid() {
 
     pyramid = new THREE.Mesh(
     	new THREE.CylinderGeometry(0,10,3,4,1),
-    	new THREE.MeshLambertMaterial({color: 0x777777, opacity: 1, transparent: true})
+    	new THREE.MeshLambertMaterial({color: 0x777777, opacity: 0.1, transparent: true})
     );
 
     
@@ -100,8 +101,21 @@ function buildField(obj,n) {
 
 function popAndShow() {
     var random_num = Math.floor((Math.random() * pyramids.length));
-    scene.add(pyramids.splice(random_num,1)[0]);
-    
+    var pyramid = pyramids.splice(random_num,1)[0];
+    scene.add(pyramid)
+    pyramid_buffer.push(pyramid);
+}
+
+function animatePyramids() {
+    pyramid_buffer.forEach(function(pyramid) {
+	if (pyramid.material.opacity >= 1) {
+	    var n = pyramid_buffer.indexOf(pyramid);
+	    pyramid_buffer.splice(n,1);
+	}
+	else {
+	    pyramid.material.opacity += 0.00002;
+	}
+    })
 }
 
 function animate() {
@@ -109,6 +123,7 @@ function animate() {
 
     if (pyramids.length > 0) popAndShow();
     if (pyramids.length > 0) popAndShow();
+    if (pyramid_buffer.length > 0) animatePyramids();
     //create buffer that for new pyramids that need their opacity increased and moved into place
     //pyramids should be put in the buffer in the pop and show
     //then another function 'revealslow' increments all of their opacity's by 0.1 and moving them
