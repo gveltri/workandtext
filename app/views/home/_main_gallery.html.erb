@@ -1,11 +1,11 @@
-    <%= javascript_include_tag 'three.js' %>
-    <script>
-    var scene, camera, renderer;
+<%= javascript_include_tag 'three.js' %>
+<script>
+var scene, camera, renderer;
 var geometry, material, mesh;
 var pyramid, dir_light,visited = [];
 
 init();
-animate();
+
 
 function init() {
 
@@ -66,7 +66,9 @@ function init() {
     pyramid.geometry.computeVertexNormals();
     scene.add(pyramid);
 
-    recursiveDraw(pyramid,5,visited);
+    visited.push(pyramid.position.x.toString() + ',' + pyramid.position.z.toString());
+
+    recursiveDraw(pyramid,50,visited);
 
 }
 
@@ -77,42 +79,44 @@ function recursiveDraw(obj,n) {
 	return;
     }
     
-    visited.push([obj.position.x,obj.position.z]);
-    
-    var newPyramid = obj.clone();
-    newPyramid.geometry.computeBoundingBox();
-    newPyramid.position.x += newPyramid.geometry.boundingBox.max.x*1.4;
-    if (visited.indexOf([newPyramid.position.x,newPyramid.position.z]) < 1) {
-	scene.add(newPyramid);
-	recursiveDraw(newPyramid,n-1);
+    var pyramid1 = obj.clone();
+    pyramid1.geometry.computeBoundingBox();
+    pyramid1.position.x += pyramid1.geometry.boundingBox.max.x*1.4;
+    if (visited.indexOf(pyramid1.position.x.toString() + ',' + pyramid1.position.z.toString()) < 1) {
+	scene.add(pyramid1);
+	visited.push(pyramid1.position.x.toString() + ',' + pyramid1.position.z.toString());
+	recursiveDraw(pyramid1,n-1);
     }
 
-    var newPyramid = obj.clone();
-    newPyramid.geometry.computeBoundingBox();
-    newPyramid.position.z += newPyramid.geometry.boundingBox.max.z*1.4;
-    if (visited.indexOf([newPyramid.position.x,newPyramid.position.z]) < 1) {
-	scene.add(newPyramid);
-	recursiveDraw(newPyramid,n-1);
-    }
-    
-    var newPyramid = obj.clone();
-    newPyramid.geometry.computeBoundingBox();
-    newPyramid.position.x -= newPyramid.geometry.boundingBox.max.x*1.4;
-    if (visited.indexOf([newPyramid.position.x,newPyramid.position.z]) < 1) {
-	scene.add(newPyramid);
-	recursiveDraw(newPyramid,n-1);
-	
+    var pyramid2 = obj.clone();
+    pyramid2.geometry.computeBoundingBox();
+    pyramid2.position.z += pyramid2.geometry.boundingBox.max.x*1.4;
+    if (visited.indexOf(pyramid2.position.x.toString() + ',' + pyramid2.position.z.toString()) < 1) {
+	scene.add(pyramid2);
+	visited.push(pyramid2.position.x.toString() + ',' + pyramid2.position.z.toString());
+	recursiveDraw(pyramid2,n-1);
     }
 
-    var newPyramid = obj.clone();
-    newPyramid.geometry.computeBoundingBox();
-    newPyramid.position.z -= newPyramid.geometry.boundingBox.max.z*1.4;
-    if (visited.indexOf([newPyramid.position.x,newPyramid.position.z]) < 1) {
-	scene.add(newPyramid);
-	recursiveDraw(newPyramid,n-1);
+    var pyramid3 = obj.clone();
+    pyramid3.geometry.computeBoundingBox();
+    pyramid3.position.x -= pyramid3.geometry.boundingBox.max.x*1.4;
+    if (visited.indexOf(pyramid3.position.x.toString() + ',' + pyramid3.position.z.toString()) < 1) {
+	scene.add(pyramid3);
+	visited.push(pyramid3.position.x.toString() + ',' + pyramid3.position.z.toString());
+	recursiveDraw(pyramid3,n-1);
     }
 
-    
+    var pyramid4 = obj.clone();
+    pyramid4.geometry.computeBoundingBox();
+    pyramid4.position.z -= pyramid4.geometry.boundingBox.max.x*1.4;
+    if (visited.indexOf(pyramid4.position.x.toString() + ',' + pyramid4.position.z.toString()) < 1) {
+	scene.add(pyramid4);
+	visited.push(pyramid4.position.x.toString() + ',' + pyramid4.position.z.toString());
+	recursiveDraw(pyramid4,n-1);
+    }
+
+
+    renderer.render(scene, camera);
 }
 
 
