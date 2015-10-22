@@ -15,5 +15,4 @@
 //= require jquery.easing.min
 //= require turbolinks
 //= require bootstrap
-//= require bootstrap.min
-//= require grayscale
+//= require workandtext
